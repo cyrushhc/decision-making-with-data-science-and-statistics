@@ -1,0 +1,233 @@
+###########################
+#######Question 1##########
+###########################
+
+####(a) Replicating#####
+
+sesame <- read.csv("https://tinyurl.com/wlgl63b")
+plot(sesame$pre.test, sesame$post.test, xlab= "pretest score",ylab= "posttest score", xlim= c(20,120), ylim= c(20,120), main="grade 4"  )
+t <- which(sesame$treatment == 1)
+c <- which(sesame$treatment == 0)
+t.group <- sesame[t,]
+c.group <- sesame[c,]
+t.lm <- lm(t.group$post.test ~ t.group$pre.test)
+c.lm <- lm(c.group$post.test ~ c.group$pre.test)
+abline(t.lm)
+abline(c.lm, lty =2)
+
+####Question 1(b)####
+
+sesame <- read.csv("https://tinyurl.com/wlgl63b")
+t <- which(sesame$treatment == 1)
+c <- which(sesame$treatment == 0)
+t.group$post.test - t.group$pre.test 
+sesame[11,1] <- 75
+sesame[11,2]
+t.group <- sesame[t,]
+c.group <- sesame[c,]
+plot(sesame$pre.test, sesame$post.test, xlab= "pretest score",ylab= "posttest score", xlim= c(20,120), ylim= c(20,120), main="grade 4", col=ifelse(sesame$pre.test==104.1, "red", "black")  )
+
+t.lm <- lm(t.group$post.test ~ t.group$pre.test)
+c.lm <- lm(c.group$post.test ~ c.group$pre.test)
+abline(t.lm)
+abline(c.lm, lty =2)
+
+####Question 1(c)#####
+
+library(arm)
+lm.4 <- lm(post.test ~treatment +pre.test + treatment:pre.test, data = sesame)
+lm_4_sim <- sim(lm.4)
+lm_4_sim
+plot (0, 0, xlim= range (sesame$pre.test), ylim=c(-5,10),
+      xlab="pre-test", ylab="treatment effect",
+      main="treatment effect in grade 4")
+abline (0, 0, lwd=.5, lty=2)
+for (i in 1:20){
+  curve (coef(lm_4_sim)[i,2] +coef(lm_4_sim)[i,4]*x, lwd=.5, col="gray",
+         add=TRUE)}
+curve(coef(lm.4)[2] + coef(lm.4)[4]*x, lwd=.5, add=TRUE)
+
+
+###########################
+#######Question 2##########
+###########################
+
+####(a)####
+tinting = read.csv(url("https://tinyurl.com/v4bq99k"))
+lm.5 <- lm(csoa ~ age + sex + target + I(tint!= "no")+ I(as.numeric(tint!="no")*age), data = tinting)
+summary(lm.5)
+sim.lm5 <- sim(lm.5, n.sim= 1000)        
+
+#sex: m = 1
+#target: locon = 1
+#tint: TRUE = 1
+
+wanted.age <- c(20,30,40,50,60,70,80)
+
+x <- c()
+y1 <- c()
+y2 <- c()
+y3 <- c()
+
+for (j in 1:7){
+    for (i in 1:1000){
+      result = c()  
+      a = sim.lm5@coef[i,1]*rep(1, length(tinting$age))+
+          sim.lm5@coef[i,2]*rep(wanted.age[j], length(tinting$age))+
+          sim.lm5@coef[i,3]*rep(0, length(tinting$age))+ #sex
+          sim.lm5@coef[i,4]*rep(0, length(tinting$age))+ #target
+          sim.lm5@coef[i,5]*rep(1, length(tinting$age))+ #yes tint
+          sim.lm5@coef[i,6]*rep(wanted.age[j], length(tinting$age)) + rnorm(length(tinting$age), 0, sim.lm5@sigma[i])
+          result <- c(result, a)
+    }
+  cat ("The mean csoa for a female aged", wanted.age[j], "is", mean(result), "\n")
+  cat ("The confidence interval for csoa is:",quantile(result,probs=c(0.025,0.975)), "\n\n" )
+  x <- c(x,wanted.age[j])
+  y1 <- c(y1,mean(result))
+  y2 <- c(y2,quantile(result,probs=c(0.025)))
+  y3 <- c(y3,quantile(result,probs=c(0.975)))
+  }
+
+table1<-data.frame(age = x, mean= y1, lower_bound = y2, upper_bound = y3)
+table1 
+
+plot(x,y1,xlab= "Age",ylab= "csoa", xlim= c(20,80), ylim= c(0,120),col="red", main="CSOA by Age")
+points(x,y2, pch=16, col="blue")
+points(x,y3, pch=16, col="green")
+legend("topleft", pch=c(15,16,17), 
+       col=c("red","blue","green"), 
+       legend=c("Mean", "Lower Bound (0.025)", "Upper Bound (0.975)"))
+
+
+####(b)####
+
+treatment.result <- c()
+x2 <- c()
+y4 <- c()
+y5 <- c()
+y6 <- c()
+
+for (j in 1:7){
+  for (i in 1:1000){
+    treamtment.result = c()  
+    #treated group
+    a = sim.lm5@coef[i,1]*rep(1, length(tinting$age))+
+      sim.lm5@coef[i,2]*rep(wanted.age[j], length(tinting$age))+
+      sim.lm5@coef[i,3]*rep(0, length(tinting$age))+
+      sim.lm5@coef[i,4]*rep(0, length(tinting$age))+
+      sim.lm5@coef[i,5]*rep(1, length(tinting$age))+
+      sim.lm5@coef[i,6]*rep(wanted.age[j], length(tinting$age)) + rnorm(length(tinting$age), 0, sim.lm5@sigma[i])
+    #control group
+    b = sim.lm5@coef[i,1]*rep(1, length(tinting$age))+
+      sim.lm5@coef[i,2]*rep(wanted.age[j], length(tinting$age))+
+      sim.lm5@coef[i,3]*rep(0, length(tinting$age))+
+      sim.lm5@coef[i,4]*rep(0, length(tinting$age))+
+      sim.lm5@coef[i,5]*rep(0, length(tinting$age))+
+      sim.lm5@coef[i,6]*rep(0, length(tinting$age)) + rnorm(length(tinting$age), 0, sim.lm5@sigma[i])
+    
+    treatment.effect = a-b
+    treamtment.result <- c(treamtment.result, treatment.effect)
+  }
+  cat ("The mean treament effect for a female aged", wanted.age[j], "is", mean(treamtment.result), "\n")
+  cat ("The confidence interval for the treament effect is:",quantile(treamtment.result,probs=c(0.025,0.975)), "\n\n" )
+  x2 <- c(x2,wanted.age[j])
+  y4 <- c(y4,mean(treamtment.result))
+  y5 <- c(y5,quantile(treamtment.result,probs=c(0.025)))
+  y6 <- c(y6,quantile(treamtment.result,probs=c(0.975)))
+}
+
+table2<-data.frame(age = x2, mean= y4, lower_bound = y5, upper_bound = y6)
+table2 
+
+plot(x2,y4,xlab= "Age",ylab= "Treatment effect", xlim= c(20,80), ylim= c(-50,100),col="red", main="Treatment Effect By Age")
+points(x2,y5, pch=16, col="blue")
+points(x2,y6, pch=16, col="green")
+legend("topleft", pch=c(15,16,17), 
+       col=c("red","blue","green"), 
+       legend=c("Mean", "Lower Bound (0.025)", "Upper Bound (0.975)"))
+
+
+###########################
+#######Question 3##########
+###########################
+
+
+rsquared <- function(ytrue, ypred) {
+  storage <- rep(NA, 10000)
+  for (i in 1:10000){
+    random = sample (1:nrow(lalonde), nrow(lalonde), replace = TRUE)
+    res <- sum((ytrue[random] - ypred[random])**2)
+    tot <- sum((ytrue[random] - mean(ytrue[random]))**2)
+    storage[i] <- (1-res/tot)
+  }
+  return(mean(storage))
+}
+
+library(Matching)
+lalonde
+lm6 <-  lm(treat ~ age, educ, data = lalonde)
+names(lm6)
+rsquared(lalonde$treat, lm6$fitted.values)
+summary(lm6)$r.sq
+
+###########################
+#######Question 4##########
+###########################
+
+library(foreign)
+foo <- read.dta("mazedata1.dta")
+
+
+trt <- vector()
+foo$trt <- rep(0, nrow(foo))
+foo$trt[which(foo$treatment == "Caste Revealed")] <-1
+
+
+iterations <- 10000
+
+storage <- rep(NA, iterations) 
+
+for (i in 1:iterations) {
+  
+  lm.mazedata = lm(round1 ~ trt, data = foo[sample(1:nrow(foo), nrow(foo)/2, replace = T),])
+  storage[i] <- lm.mazedata$coefficients[2]
+}
+quantile(storage, c(0.025, 0.975))
+
+
+lm.mazedata = lm(round1 ~ trt, data = foo)
+confint(lm.mazedata)[2,]
+
+# (a)
+data.frame("simulation" = quantile(storage, c(0.025, 0.975)), "Conventional" = confint(lm.mazedata)[2,])
+
+# (b) 
+hist(storage, xlab = "Treatment Effect", ylab = "Count", main = "Bootstrapped Values for the Treatment Effect")
+
+
+###########################
+#######Question 5##########
+###########################
+
+foo <- read.csv(url("https://tinyurl.com/yx8tqf3k"))
+set.seed(12345)
+test_set_rows <- sample(1:length(foo$age), 2000, replace =FALSE)
+test_foo = foo[test_set_rows,]
+train_foo = foo[-test_set_rows,]
+
+glm1 = glm(treat ~ age, data = train_foo)
+glm2 = glm(treat ~ .-re78, data = train_foo)
+
+MSE1 <- mean((test_foo$treat - predict.lm(glm1, test_foo))**2)
+MSE2 <- mean((test_foo$treat - predict.lm(glm2, test_foo))**2)
+
+library(boot)
+
+LOOCV1 = cv.glm(train_foo, glm1)$delta[1]
+LOOCV2 = cv.glm(train_foo, glm2)$delta[1]
+
+ten_fold1 = cv.glm(train_foo, glm1, K=10)$delta[1]
+ten_fold2 = cv.glm(train_foo, glm2, K=10)$delta[1]
+
+Table3 <- data.frame("Test Set Error" = c(MSE1,MSE2), "LOOCV" = c(LOOCV1, LOOCV2), "Ten-Fold CV" = c(ten_fold1, ten_fold2))
+Table3
