@@ -1,0 +1,305 @@
+##Import All the data
+train <- read.csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vTup6u9yIELUy9dGPgv21kbD0p17DpcAAHEvFVX37WlXkbY-1m3WfBrrV6qGqMxDFH1RQkQrnqThsVa/pub?gid=371007622&single=true&output=csv")
+test <- read.csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vTup6u9yIELUy9dGPgv21kbD0p17DpcAAHEvFVX37WlXkbY-1m3WfBrrV6qGqMxDFH1RQkQrnqThsVa/pub?gid=1632438972&single=true&output=csv")
+density <- read.csv ("https://docs.google.com/spreadsheets/d/e/2PACX-1vSiuPh03W_8MnmZTIeTauz8I_5R86lbem6a9o2s12D5MI9ZRB3DjzM3hcdPDlssQEAjOv-BZbI0vV48/pub?output=csv")
+trust <- read.csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vTstRPxPiyxtxzx0hqffjExiwoBBdvX1kba49wiK4si1wgheUqpx2mF3PbqUXwq0Z-cQfksVNkmDdmZ/pub?output=csv")
+effectiveness <- read.csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vTdMMmsFaHXCmmivS6SkQM45DSmPhuWRWyLiVfVPLqaAO1SaICwEbT9T8RgegU0j_E8DF3pWi9MpiPX/pub?gid=519791657&single=true&output=csv")
+
+#Create empty columns in the data frames
+train$density1<- rep(0, length(train$Code)) 
+train$trust1<- rep(0, length(train$Code)) 
+train$effectiveness<- rep(0, length(train$Code)) 
+train$Lat<- rep(0, length(train$Code)) 
+
+test$density1<- rep(0, length(test$Code)) 
+test$trust1<- rep(0, length(test$Code)) 
+test$effectiveness<- rep(0, length(test$Code)) 
+test$Lat<- rep(0, length(test$Code)) 
+
+##################
+###Training Set###
+##################
+
+### ADD density FOR TRAIN
+for (i in 1:length(train$Entity)){
+  for (k in 1:length(density$X2018)){
+    if (train$Entity[i] == density$Country.Name[k]){
+      train$density1[i] <- density$X2018[k]
+    } 
+  }
+}
+
+### ### ADD TRUST FOR TRAIN
+for (i in 1:length(train$Entity)){
+  for (k in 1:length(trust$Share.of.people.who.trust.their.national.government....)){
+    if (train$Entity[i] == trust$Entity[k]){
+      train$trust1[i] <- trust$Share.of.people.who.trust.their.national.government....[k]
+    } 
+  }
+}
+
+### ADD government effectiveness FOR TRAIN
+for (i in 1:length(train$Entity)){
+  for (k in 1:length(effectiveness$Country.Name)){
+    if (train$Entity[i] == effectiveness$Country.Name[k]){
+      train$effectiveness[i] <- effectiveness$X2018[k]
+    } 
+  }
+}
+
+#Replace missing values with NA
+train$density <- replace(train$denisty, train$density == 0, NA)
+train$trust1 <- replace(train$trust1, train$trust1 == 0, NA)
+train$effectiveness <- replace(train$effectiveness, train$effectiveness == 0, NA)
+
+#Make date into an R processable format
+train$Date <- as.Date(train$Date, format = "%b %d, %Y")
+
+#Removing NAs
+train_no_nas <- train[-which(is.na(train$density1)),]
+train_no_nas1 <- train_no_nas[-which(is.na(train_no_nas$effectiveness)),]
+train_no_nas2 <- train_no_nas1[-which(is.na(train_no_nas1$trust1)),]
+train_no_nas2_duplicate <- train_no_nas2
+
+
+#Remove the unecessary columns
+drop <- c("Lat", "Lon", "density","Code")
+train_no_nas2_duplicate <- train_no_nas2_duplicate[ , !(names(train_no_nas2_duplicate) %in% drop)]
+
+summary(train_no_nas2_duplicate)
+newtrain <- train_no_nas2_duplicate
+
+#Changing the types of variables
+newtrain$Case <- as.factor(newtrain$Case)
+newtrain$Case <- as.character(newtrain$Case)
+newtrain$Case <- as.numeric(newtrain$Case)
+newtrain$Entity <- as.character(newtrain$Entity)
+
+
+
+##############
+###Test Set###
+##############
+
+### ADD government effectiveness FOR test set
+for (i in 1:length(test$Entity)){
+  for (k in 1:length(effectiveness$Country.Name)){
+    if (test$Entity[i] == effectiveness$Country.Name[k]){
+      test$effectiveness[i] <- effectiveness$X2018[k]
+    } 
+  }
+}
+
+### ADD TRUST FOR TRAIN
+for (i in 1:length(test$Entity)){
+  for (k in 1:length(trust$Share.of.people.who.trust.their.national.government....)){
+    if (test$Entity[i] == trust$Entity[k]){
+      test$trust1[i] <- trust$Share.of.people.who.trust.their.national.government....[k]
+    } 
+  }
+}
+
+### ADD density FOR TRAIN
+for (i in 1:length(test$Entity)){
+  for (k in 1:length(density$X2018)){
+    if (test$Entity[i] == density$Country.Name[k]){
+      test$density1[i] <- density$X2018[k]
+    } 
+  }
+}
+
+#Replacing missing values with NA
+test$density <- replace(test$denisty, test$density == 0, NA)
+test$trust1 <- replace(test$trust1, test$trust1 == 0, NA)
+test$effectiveness <- replace(test$effectiveness, test$effectiveness == 0, NA)
+
+
+#Changing the data to an R format
+test$Date <- as.Date(test$Date, format = "%b %d, %Y")
+
+#Removing NAs
+test_no_nas <- test[-which(is.na(test$density1)),]
+test_no_nas1 <- test_no_nas[-which(is.na(test_no_nas$effectiveness)),]
+test_no_nas2 <- test_no_nas1[-which(is.na(test_no_nas1$trust1)),]
+
+test_no_nas2_duplicate <- test_no_nas2
+
+#Dropping empty columns
+drop <- c("Lat", "Lon", "density","Code")
+test_no_nas2_duplicate <- test_no_nas2_duplicate[ , !(names(test_no_nas2_duplicate) %in% drop)]
+newtest <- test_no_nas2_duplicate
+
+
+#Changing the types of the variable
+newtest$Case <- as.factor(newtest$Case)
+newtest$Case <- as.character(newtest$Case)
+newtest$Case <- as.numeric(newtest$Case)
+newtest$Entity <- as.character(newtest$Entity)
+
+#######################
+###Adding Fatalities###
+fatalities <- read.csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vQ1i2UeHKc2SpFBk1el_7IjTbhTjbSTwol3s94DmQCsO36oT5wA_A4jjGdZENYnlSE5QM0FQLpHpN2F/pub?output=csv")
+
+#Changing the date to an R readable format
+fatalities$Date <- as.Date(fatalities$Date, "%d-%b-%y")
+#Changing the date to numerical values
+fatalities$Date <- as.integer(fatalities$Date - min(fatalities$Date)) + 1
+
+
+#Splitting the fatalities into test and training set
+fat_train <- fatalities[which(fatalities$Date <= 84),]
+fat_test <- fatalities[which(fatalities$Date >= 85),]   
+
+
+#Importing the data
+newtrain_fat <- read.csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vTXaPh1mh2BAj6Lejv3CBjgwRbM0mU4quFkd82YJUD9iDjh7th9vgiSiW8cndNDGbKYByXZztMGzikU/pub?gid=1680522534&single=true&output=csv")
+newtest_fat<- read.csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vTrcAaFTXdOm_oflczI6AZSXbF934BEYgCY4n6Mpos3bdrebbtHJmJGB-viY-8Jk7DOehOGuJzqmXHb/pub?gid=416030445&single=true&output=csv")
+
+
+#Merging the fatalities with the existing data sets
+newtrain_fat <- merge(newtrain_fat, fat_train)
+newtest_fat <- merge(newtest_fat, fat_test)
+
+
+#Dropping irrelevant columns
+drop <- c("Code", "Case.fatality.rate.of.COVID.19....")
+newtrain_fat <- newtrain_fat[ , !(names(newtrain_fat) %in% drop)]
+
+drop <- c("Code", "Case.fatality.rate.of.COVID.19....")
+newtest_fat <- newtest_fat[ , !(names(newtest_fat) %in% drop)]
+
+
+#Renaming the variable
+names(newtrain_fat) <- c("Entity","Date","fatal", "Case" ,"density1" ,"trust1","effectiveness")
+names(newtest_fat) <- c("Entity","Date","fatal", "Case" ,"density1" ,"trust1","effectiveness")
+
+#Exporting them as CSV files
+write.csv(newtrain_fat, "newtrain_fat.csv", row.names = FALSE)
+write.csv(newtest_fat, "newtest_fat.csv", row.names = FALSE)
+
+#Set up
+install.packages("forestError")
+library(forestError)
+library (tree)
+library(randomForest)
+library(ggplot2)
+
+set.seed (2)
+
+#Importing processed data
+newtrain <- read.csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vQYBef1x1SgQtrb8SjDFWOghd7DHsz_d5Emqeeaj4E5s4qZNv2LZEFWGzx-t8LC-0mHL1QGUmJc9FL6/pub?output=csv")
+newtest <- read.csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vQ7UJ-8Am9rZW7EhcUzMjtZyCsVsbBBVMVL2dnYAo7fmELYDkx6qSjspG9_SDyIthYBoUVJN3rS22Ea/pub?output=csv")
+
+#combine LAT and LONG
+geo <- read.csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vSk8s0I3uS8WkVg_WVvqi1dPzQZL18C9q6LJDBdkbfeBz33CcRAi-Jx6vecDOL1NebcpOuhal-TBT0L/pub?gid=256526638&single=true&output=csv")
+newtrain <- unique(merge(newtrain,geo))
+newtest <- merge(newtest,geo)
+
+
+####################
+###Regression Tree##
+####################
+
+#Creating the decision treee model
+tree.train.1 <- tree(Case~Long+Lat+Date, data= newtrain)
+tree.train.2 <- tree(Case~density1+effectiveness+trust1+Date, data= newtrain)
+tree.train.3 <- tree(Case~density1+effectiveness+trust1+Date+Long+Lat, data= newtrain)
+tree.train.4 <- tree(Case~density1+effectiveness+trust1+Date+fatal, data= newtrain)
+tree.train.5 <- tree(Case~density1+effectiveness+trust1+Date+fatal+Long+Lat, data= newtrain)
+
+#plotting the decision trees
+plot(tree.train.1)
+text(tree.train.1,pretty = 0)
+plot(tree.train.2)
+text(tree.train.2,pretty = 0)
+plot(tree.train.3)
+text(tree.train.3,pretty = 0)
+plot(tree.train.4)
+text(tree.train.4,pretty = 0)
+plot(tree.train.5)
+text(tree.train.5,pretty = 0)
+
+##Predicting using the decision tree
+yhat_tree <- predict(tree.train.1 ,newdata= newtest)
+yhat_tree
+
+##Absolate mean 
+mean(yhat_tree-newtest$Case)
+
+##RMSE
+mean((yhat_tree-newtest$Case)^2)^0.5
+
+##Cross validation
+cv.case =cv.tree(tree.train)
+plot(cv.case$size ,cv.case$dev ,type='b')
+
+####Prune the trees
+prune.train =prune.tree(tree.train.1, best =4)
+plot(prune.train)
+text(prune.train ,pretty =0)
+
+##Predict with the pruned model
+yhat <- predict(prune.train ,newdata= newtest)
+
+##Absolate mean 
+mean(yhat-newtest$Case)
+
+
+####################
+###Random forest####
+####################
+set.seed(122)
+
+#Creating the random forest models
+bag.covid <- randomForest(Case~density1+effectiveness+trust1+Date, data= newtrain,importance =TRUE, ntree = 500)
+bag.covid <- randomForest(Case~density1+effectiveness+trust1+Date+Long+Lat, data= newtrain,importance =TRUE, ntree = 500)
+bag.covid <- randomForest(Case~density1+effectiveness+trust1+Date+fatal, data= newtrain,importance =TRUE, ntree = 500)
+bag.covid <- randomForest(Case~effectiveness+density1+trust1+Date+fatal+Long+Lat, data= newtrain,importance =TRUE, ntree = 500)
+
+#Prediction using the random forest
+yhat.bag = predict(bag.covid, newdata=newtest, interval = "confidence")
+yhat.bag
+
+#MAE
+mean(yhat.bag-newtest$Case)
+#RMSE
+mean((yhat.bag-newtest$Case)^2)^0.5
+
+#Generating the confidence intervals for the predictions
+bag.covid <- randomForest(Case~Date+Lat+Long, data= newtrain,importance =TRUE, ntree = 500, keep.inbag = TRUE)
+output <- quantForestError(bag.covid, newtrain, newtest, alpha = 0.05)
+output$estimates <-unique(output$estimates)
+
+#Processing the output to be used in a plot
+output <- data.frame(output$estimates)
+attach(output)
+output<- output[order(pred),]
+
+#Reassignign the index numbers to the ordered data set
+rownames(output) <- NULL
+index <- c(seq(1, length(pred), by=1))
+output<-cbind(index, output)
+             
+
+# Plot the important variables
+varImpPlot(bag.covid,col="blue",pch= 2)
+
+#Plotting the confidence intervals for the predictions
+f <- ggplot() + 
+  geom_pointrange(data=output, mapping=aes(x=index, y=pred, ymin=lower_0.05, ymax=upper_0.05))
+f + ggtitle("95% Confidence Intervals for the Random Forest Predictions")
+
+
+#########################
+###Predict Countries####
+#########################
+#Isolating the predictors
+germany <- data.frame(Entity="Germany", Date = 100, density1 = 237.371, trust1 = 53.56519, effectiveness= 1.619633, fatal =800 , Lat=51, Long=9)
+uk <- data.frame(Entity="United Kingdom", Date = 100, density1 = 274.8273, trust1 = 51.02283	, effectiveness= 1.341884, fatal =463 , Lat=55.3781, Long=-3.4360)
+us <- data.frame(Entity="United States", Date = 100, density1 = 35.76609, trust1 = 47.42665	, effectiveness=1.576998, fatal = 590 , Lat=43.3266, Long=-84.536)
+
+
+#Predicting the values
+predict(bag.covid, germany)
+predict(bag.covid, uk)
+predict(bag.covid, us)
